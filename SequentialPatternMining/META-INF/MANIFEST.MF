@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: CMSPAM-Node extension for KNIME Workbench
+Bundle-SymbolicName: CMSPAM;singleton:=true
+Bundle-Version: 1.1.3
+Bundle-ClassPath: cmspam.jar
+Bundle-Activator: org.sequential.CMSPAMNodePlugin
+Bundle-Vendor: Dennis S
+Require-Bundle: org.eclipse.core.runtime,
+ org.knime.workbench.core,
+ org.knime.workbench.repository,
+ org.knime.base
+Bundle-ActivationPolicy: lazy
+Export-Package: org.sequential
+
