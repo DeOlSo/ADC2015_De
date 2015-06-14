@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: BIDE-Node extension for KNIME Workbench
 Bundle-SymbolicName: BIDE_PLUS;singleton:=true
-Bundle-Version: 1.0.3
+Bundle-Version: 1.0.5
 Bundle-ClassPath: cmspam.jar
 Bundle-Activator: org.closedSequential.BIDENodePlugin
 Bundle-Vendor: Dennis S

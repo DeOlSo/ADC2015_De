@@ -18,8 +18,8 @@
          point="org.knime.workbench.repository.nodes">
       <node
             category-path="/"
-            factory-class="org.closedSequential.BIDENodeFactory"
-            id="org.sequential.BIDENodeFactory"/>
+            factory-class="org.cmdeo.CMDeoNodeFactory"
+            id="org.cmdeo.CMDeoNodeFactory"/>
    </extension>
    
 </plugin>

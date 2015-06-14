@@ -1,4 +1,4 @@
-package org.closedSequential;
+package org.sequentialRules;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,8 +10,6 @@ import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.RowKey;
-import org.knime.core.data.StringValue;
-import org.knime.core.data.container.CloseableRowIterator;
 import org.knime.core.data.def.DefaultRow;
 import org.knime.core.data.def.DoubleCell;
 import org.knime.core.data.def.IntCell;
@@ -19,15 +17,10 @@ import org.knime.core.data.def.StringCell;
 import org.knime.core.node.BufferedDataContainer;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
-import org.knime.core.node.defaultnodesettings.DialogComponentBoolean;
-import org.knime.core.node.defaultnodesettings.DialogComponentColumnNameSelection;
-import org.knime.core.node.defaultnodesettings.DialogComponentNumber;
-import org.knime.core.node.defaultnodesettings.DialogComponentString;
 import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
 import org.knime.core.node.defaultnodesettings.SettingsModelColumnName;
 import org.knime.core.node.defaultnodesettings.SettingsModelDoubleBounded;
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
-import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
@@ -36,33 +29,33 @@ import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 
-import spmf.bide.*;
+
+import spmf.cmrules.AlgoCMRules;
 
 
 /**
- * This is the model implementation of BIDE.
- * Implementation of the BIDE Algorithm for mining closed frequent sequential patterns
+ * This is the model implementation of CMRules.
+ * Implementation of the CMRules algorithm
  *
- * @author Dennis S
+ * @author Dennis S.
  */
-public class BIDENodeModel extends NodeModel {
+public class CMRulesNodeModel extends NodeModel {
     
     // the logger instance
     private static final NodeLogger logger = NodeLogger
-            .getLogger(BIDENodeModel.class);
+            .getLogger(CMRulesNodeModel.class);
         
     /** the settings key which is used to retrieve and 
         store the settings (from the dialog or from a settings file)    
        (package visibility to be usable from the dialog). */
-
 	static final String CFGKEY_MINSUP = "MinSup";
-	static final String CFGKEY_SHOWSEQUENCE = "ShowSequence";
+	static final String CFGKEY_MINCONF = "MinConf";
 	static final String CFGKEY_COLSEL = "ColSel";
 	
 
     /** initial default values. */	
     static final double DEFAULT_MINSUP = 0.01;
-    static final boolean DEFAULT_SHOWSEQUENCE = false;
+    static final double DEFAULT_MINCONF = 0.01;
     static final String DEFAULT_COLSEL = "";
 
 
@@ -72,49 +65,39 @@ public class BIDENodeModel extends NodeModel {
     
     private final SettingsModelDoubleBounded m_minsup =
             new SettingsModelDoubleBounded(
-                BIDENodeModel.CFGKEY_MINSUP,
-                BIDENodeModel.DEFAULT_MINSUP,
+                CMRulesNodeModel.CFGKEY_MINSUP,
+                CMRulesNodeModel.DEFAULT_MINSUP,
                 0.01, 1);
     
     
-   private final SettingsModelBoolean m_showsequence =
-    		new SettingsModelBoolean(
-    				BIDENodeModel.CFGKEY_SHOWSEQUENCE,
-    				BIDENodeModel.DEFAULT_SHOWSEQUENCE);
+    private final SettingsModelDoubleBounded m_minconf =
+            new SettingsModelDoubleBounded(
+                CMRulesNodeModel.CFGKEY_MINCONF,
+                CMRulesNodeModel.DEFAULT_MINCONF,
+                0.01, 1);
     
+
 
    
    private final SettingsModelColumnName m_colsel =
    		new SettingsModelColumnName(
-   				BIDENodeModel.CFGKEY_COLSEL,
-   				BIDENodeModel.DEFAULT_COLSEL);  
+   				CMRulesNodeModel.CFGKEY_COLSEL,
+   				CMRulesNodeModel.DEFAULT_COLSEL);  
    
    
    
-   private AlgoBIDEPlus algoBide;
-   
-   
+   private AlgoCMRules algoCMRules;
+    
+
     /**
      * Constructor for the node model.
      */
-    protected BIDENodeModel() {
+    protected CMRulesNodeModel() {
     
         // TODO one incoming port and one outgoing port is assumed
         super(1, 1);
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     /**
      * {@inheritDoc}
      */
@@ -122,29 +105,20 @@ public class BIDENodeModel extends NodeModel {
     protected BufferedDataTable[] execute(final BufferedDataTable[] inData,
             final ExecutionContext exec) throws Exception {
 
-        
-        
-        algoBide = new AlgoBIDEPlus();
-        algoBide.setShowSequenceIdentifiers(m_showsequence.getBooleanValue());
-        SequenceDatabase db = new SequenceDatabase();
-        db.loadTable(inData, m_colsel.getColumnName());
-        int sup = (int) (inData[0].getRowCount() * m_minsup.getDoubleValue());
-        ArrayList<String[]>  outputData = algoBide.runAlgorithm(db, sup);
-        
-        
-
+        algoCMRules = new AlgoCMRules();
+        ArrayList<String[]>  outputData = algoCMRules.runAlgorithm(inData, m_colsel.getColumnName(), m_minsup.getDoubleValue() , m_minconf.getDoubleValue());
+            
+            
         
         // the data table spec of the single output table, 
         // the table will have three columns:
-        DataColumnSpec[] allColSpecs = new DataColumnSpec[4];
+        DataColumnSpec[] allColSpecs = new DataColumnSpec[3];
         allColSpecs[0] = 
-            new DataColumnSpecCreator("Pattern", StringCell.TYPE).createSpec();
+            new DataColumnSpecCreator("Rule", StringCell.TYPE).createSpec();
         allColSpecs[1] = 
-            new DataColumnSpecCreator("Support", IntCell.TYPE).createSpec();
+            new DataColumnSpecCreator("Support (absolute)", IntCell.TYPE).createSpec();
         allColSpecs[2] = 
-            new DataColumnSpecCreator("Support in %", DoubleCell.TYPE).createSpec();
-        allColSpecs[3] =
-        	new DataColumnSpecCreator("Sequence ids", StringCell.TYPE).createSpec();
+            new DataColumnSpecCreator("Confidence", DoubleCell.TYPE).createSpec();
         DataTableSpec outputSpec = new DataTableSpec(allColSpecs);
         // the execution context will provide us with storage capacity, in this
         // case a data container to which we will add rows sequentially
@@ -155,16 +129,13 @@ public class BIDENodeModel extends NodeModel {
         int rowCount = inData[0].getRowCount();
         for(int k = 0; k < outputData.size(); k++){
         RowKey key = new RowKey("Row " + k);
-        DataCell[] cells = new DataCell[4];
-        cells[0] = new StringCell(outputData.get(k)[0] + "-2"); 
+        DataCell[] cells = new DataCell[3];
+        cells[0] = new StringCell(outputData.get(k)[0]); 
         int support = Integer.parseInt(outputData.get(k)[1].replaceAll("[^\\d]", ""));
         cells[1] = new IntCell(support); 
-        cells[2] = new DoubleCell((support*100)/(double)rowCount);
-        if(m_showsequence.getBooleanValue() == true){
-        	cells[3] = new StringCell(outputData.get(k)[2]);
-        } else {
-        	cells[3] = new StringCell("");
-        }
+        double confidence = Double.parseDouble(outputData.get(k)[2]);
+        cells[2] = new DoubleCell(confidence);
+
         
         DataRow row = new DefaultRow(key, cells);
         container.addRowToTable(row);
@@ -182,21 +153,6 @@ public class BIDENodeModel extends NodeModel {
         
         return new BufferedDataTable[]{out};
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
     /**
      * {@inheritDoc}
@@ -230,11 +186,10 @@ public class BIDENodeModel extends NodeModel {
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) {
 
-        // TODO save user settings to the config object.
-        
-        m_minsup.saveSettingsTo(settings);
-        m_showsequence.saveSettingsTo(settings);
+    	
         m_colsel.saveSettingsTo(settings);
+        m_minconf.saveSettingsTo(settings);
+        m_minsup.saveSettingsTo(settings);
 
     }
 
@@ -245,13 +200,11 @@ public class BIDENodeModel extends NodeModel {
     protected void loadValidatedSettingsFrom(final NodeSettingsRO settings)
             throws InvalidSettingsException {
             
-        // TODO load (valid) settings from the config object.
-        // It can be safely assumed that the settings are valided by the 
-        // method below.
-        
-        m_minsup.loadSettingsFrom(settings);
-        m_showsequence.loadSettingsFrom(settings);
+
         m_colsel.loadSettingsFrom(settings);
+        m_minconf.loadSettingsFrom(settings);
+        m_minsup.loadSettingsFrom(settings);
+
     }
 
     /**
@@ -261,14 +214,10 @@ public class BIDENodeModel extends NodeModel {
     protected void validateSettings(final NodeSettingsRO settings)
             throws InvalidSettingsException {
             
-        // TODO check if the settings could be applied to our model
-        // e.g. if the count is in a certain range (which is ensured by the
-        // SettingsModel).
-        // Do not actually set any values of any member variables.
-
-        m_minsup.validateSettings(settings);
-        m_showsequence.validateSettings(settings);
         m_colsel.validateSettings(settings);
+        m_minconf.validateSettings(settings);
+        m_minsup.validateSettings(settings);
+
     }
     
     /**
@@ -306,9 +255,8 @@ public class BIDENodeModel extends NodeModel {
     }
     
     
-    
-    public AlgoBIDEPlus getAlgo(){
-    	return algoBide;
+    public AlgoCMRules getAlgo(){
+    	return algoCMRules;
     }
 
 }

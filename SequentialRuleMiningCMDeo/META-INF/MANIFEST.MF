@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: CMDeo-Node extension for KNIME Workbench
+Bundle-SymbolicName: CMDeo;singleton:=true
+Bundle-Version: 1.0.0
+Bundle-ClassPath: cmdeo.jar
+Bundle-Activator: org.cmdeo.CMDeoNodePlugin
+Bundle-Vendor: Dennis S.
+Require-Bundle: org.eclipse.core.runtime,
+ org.knime.workbench.core,
+ org.knime.workbench.repository,
+ org.knime.base
+Bundle-ActivationPolicy: lazy
+Export-Package: org.cmdeo
+
